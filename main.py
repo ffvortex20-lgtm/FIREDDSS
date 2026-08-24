@@ -8,7 +8,7 @@ MAX_CONNECTIONS = 5
 MAX_DURATION_MS = 60_000
 MIN_INTERVAL_MS = 1_000
 
-firebase = os.environ["FIREBASE_URL"].rstrip("/")
+firebase = os.environ["https://ravendev-vtx-default-rtdb.firebaseio.com"].rstrip("/")
 mb = float(os.environ.get("PAYLOAD_MB", "0.01"))
 interval_ms = int(os.environ.get("INTERVAL_MS", "1000"))
 connections = int(os.environ.get("CONNECTIONS", "1"))
