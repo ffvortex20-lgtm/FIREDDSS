@@ -1,0 +1,46 @@
+name: Firebase Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      payload_mb:
+        description: "Peso por envio (MB)"
+        required: true
+        default: "0.01"
+      interval_ms:
+        description: "Intervalo entre envios (ms)"
+        required: true
+        default: "1000"
+      connections:
+        description: "Conexoes simultaneas"
+        required: true
+        default: "1"
+      duration_ms:
+        description: "Duracao total (ms)"
+        required: true
+        default: "10000"
+
+jobs:
+  firebase-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar projeto
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencia
+        run: python -m pip install requests
+
+      - name: Executar teste
+        env:
+          FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
+          PAYLOAD_MB: ${{ inputs.payload_mb }}
+          INTERVAL_MS: ${{ inputs.interval_ms }}
+          CONNECTIONS: ${{ inputs.connections }}
+          DURATION_MS: ${{ inputs.duration_ms }}
+        run: python main.py
