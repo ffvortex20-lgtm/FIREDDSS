@@ -1,34 +1,22 @@
+import os
 import time
 import threading
 import requests
 
-MAX_MB = 5
-MAX_CONNECTIONS = 5
-MAX_DURATION_MS = 60_000
-MIN_INTERVAL_MS = 1_000
+# Limite máximo do payload
+MAX_MB = 300
 
-# Firebase Realtime Database
 firebase = "https://ravendev-vtx-default-rtdb.firebaseio.com".rstrip("/")
 
-mb = float(__import__("os").environ.get("PAYLOAD_MB", "0.01"))
-interval_ms = int(__import__("os").environ.get("INTERVAL_MS", "1000"))
-connections = int(__import__("os").environ.get("CONNECTIONS", "1"))
-duration_ms = int(__import__("os").environ.get("DURATION_MS", "10000"))
+mb = float(os.environ.get("PAYLOAD_MB", "0.01"))
+interval_ms = int(os.environ.get("INTERVAL_MS", "1000"))
+connections = int(os.environ.get("CONNECTIONS", "1"))
+duration_ms = int(os.environ.get("DURATION_MS", "10000"))
 
+# Único limite: tamanho do payload
 if not (0 < mb <= MAX_MB):
-    raise SystemExit(f"PAYLOAD_MB deve estar entre 0 e {MAX_MB} MB.")
-
-if interval_ms < MIN_INTERVAL_MS:
-    raise SystemExit(f"INTERVAL_MS minimo: {MIN_INTERVAL_MS} ms.")
-
-if not (1 <= connections <= MAX_CONNECTIONS):
     raise SystemExit(
-        f"CONNECTIONS deve estar entre 1 e {MAX_CONNECTIONS}."
-    )
-
-if not (1000 <= duration_ms <= MAX_DURATION_MS):
-    raise SystemExit(
-        f"DURATION_MS deve estar entre 1000 e {MAX_DURATION_MS} ms."
+        f"PAYLOAD_MB deve estar entre 0 e {MAX_MB} MB."
     )
 
 payload = "X" * int(mb * 1024 * 1024)
@@ -66,18 +54,16 @@ def send_once(connection_id):
             with lock:
                 if response.ok:
                     stats["ok"] += 1
-
                     print(
-                        f"[C{connection_id}] ENVIANDO -> OK "
+                        f"[C{connection_id}] OK | "
                         f"HTTP {response.status_code} | "
                         f"{latency} ms",
                         flush=True
                     )
                 else:
                     stats["errors"] += 1
-
                     print(
-                        f"[C{connection_id}] ENVIANDO -> ERRO "
+                        f"[C{connection_id}] ERRO | "
                         f"HTTP {response.status_code} | "
                         f"{latency} ms",
                         flush=True
@@ -86,7 +72,6 @@ def send_once(connection_id):
         except requests.RequestException as exc:
             with lock:
                 stats["errors"] += 1
-
                 print(
                     f"[C{connection_id}] ERRO -> {exc}",
                     flush=True
@@ -97,36 +82,33 @@ def send_once(connection_id):
         if remaining <= 0:
             break
 
-        time.sleep(
-            min(interval_ms / 1000, remaining)
-        )
+        time.sleep(interval_ms / 1000)
 
 
 print("================================")
-print("     FIREBASE TEST - GITHUB")
+print("       FIREBASE TEST")
 print("================================")
 print(f"Firebase : {firebase}")
-print(f"Peso     : {mb} MB")
+print(f"Payload  : {mb} MB")
 print(f"Intervalo: {interval_ms} ms")
 print(f"Conexoes : {connections}")
 print(f"Duracao  : {duration_ms} ms")
 print("--------------------------------")
-print("Status   : INICIANDO", flush=True)
+print("Status   : INICIANDO")
 
 threads = []
 started = time.monotonic()
 
 for i in range(1, connections + 1):
-    thread = threading.Thread(
+    t = threading.Thread(
         target=send_once,
         args=(i,)
     )
+    t.start()
+    threads.append(t)
 
-    thread.start()
-    threads.append(thread)
-
-for thread in threads:
-    thread.join()
+for t in threads:
+    t.join()
 
 elapsed = int(
     (time.monotonic() - started) * 1000
