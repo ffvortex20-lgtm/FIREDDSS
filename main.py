@@ -9,11 +9,10 @@ MAX_MB = 300
 firebase = "https://ravendev-vtx-default-rtdb.firebaseio.com".rstrip("/")
 
 mb = float(os.environ.get("PAYLOAD_MB", "0.01"))
-interval_ms = int(os.environ.get("INTERVAL_MS", "1000"))
-connections = int(os.environ.get("CONNECTIONS", "1"))
-duration_ms = int(os.environ.get("DURATION_MS", "10000"))
+interval_ms = int(os.environ.get("INTERVAL_MS", "100"))
+connections = int(os.environ.get("CONNECTIONS", "50")) # Aumentado para testar o limite de conexões
+duration_ms = int(os.environ.get("DURATION_MS", "30000"))
 
-# Único limite: tamanho do payload
 if not (0 < mb <= MAX_MB):
     raise SystemExit(
         f"PAYLOAD_MB deve estar entre 0 e {MAX_MB} MB."
@@ -28,7 +27,6 @@ stats = {
 
 lock = threading.Lock()
 
-
 def send_once(connection_id):
     end = time.monotonic() + duration_ms / 1000
     endpoint = f"{firebase}/loadtest.json"
@@ -37,6 +35,7 @@ def send_once(connection_id):
         try:
             started = time.monotonic()
 
+            # Usando requisições POST rápidas e contínuas para segurar o slot de conexão ativa
             response = requests.post(
                 endpoint,
                 json={
@@ -84,9 +83,8 @@ def send_once(connection_id):
 
         time.sleep(interval_ms / 1000)
 
-
 print("================================")
-print("       FIREBASE TEST")
+print("        FIREBASE CONNS TEST")
 print("================================")
 print(f"Firebase : {firebase}")
 print(f"Payload  : {mb} MB")
@@ -99,6 +97,7 @@ print("Status   : INICIANDO")
 threads = []
 started = time.monotonic()
 
+# Disparando múltiplas threads simultâneas para lotar a aba de conexões
 for i in range(1, connections + 1):
     t = threading.Thread(
         target=send_once,
