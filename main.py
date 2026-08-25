@@ -6,7 +6,7 @@ import requests
 # Limite máximo seguro por requisição para o Firebase não dar "Payload is too large"
 MAX_MB = 100
 
-firebase = "https://ravendev-vtx-default-rtdb.firebaseio.com".rstrip("/")
+firebase = "https://vortexvip-7f747-default-rtdb.firebaseio.com".rstrip("/")
 
 # Configuramos para forçar a sobrecarga (muitas conexões e sem pausa)
 mb = float(os.environ.get("PAYLOAD_MB", "5")) # 5 MB por requisição (ajuste se quiser mais)
